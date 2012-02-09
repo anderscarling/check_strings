@@ -1,0 +1,11 @@
+# Check Strings (in XCode-style *.lproj directories)
+
+Small hack to sanity check XCode-style strings files.
+
+Just drop into a map with =*.lproj= dirs and the script will compare
+=Localizable.strings= in all directories to the one in =en.lproj=.
+
+## Implemented checks
+* Missing string compared to base language
+* Extra string compared to base language
+* String with identical name and value compated to base
