@@ -5,7 +5,7 @@ require 'pathname'
 BASE_LANG_DIR = 'en.lproj'
 
 def get_hash(dir)
-  file = Pathname.new(dir).join("Localizable.strings")
+  file = Pathname.new(dir).join(ARGV[0] || "Localizable.strings")
   data = File.open(file, 'rb:UTF-16LE:UTF-8') { |f| f.read }
   data = data.lines.map { |line| line.match(/"(.+)"\s*=\s*"(.*)"/) }
   data = data.compact.map { |m| [m[1], m[2]] }
