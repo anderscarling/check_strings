@@ -20,7 +20,7 @@ def print_big(sym,str)
   puts sym*80
 end
 
-def print_report(dir, trans, base, identical)
+def print_report(dir, trans, base, identical, key_eql_val)
   print_big('#', "Checking %s" % dir)
 
   base.each do |key|
@@ -35,6 +35,10 @@ def print_report(dir, trans, base, identical)
     puts "Identical value in #{BASE_LANG_DIR} and #{dir}: #{key}"
   end
 
+  key_eql_val.each do |key|
+    puts "String matches translation key in #{dir}: #{key}"
+  end
+
   print_big(' ', "")
 end
 
@@ -46,5 +50,5 @@ Pathname.glob("*.lproj") do |dir|
   intersect = (trans.keys & base.keys)
 
   identical = intersect.map { |key| key if trans[key] == base[key] }.compact
-  print_report(dir, trans.keys - intersect, base.keys - intersect, identical)
+  print_report(dir, trans.keys - intersect, base.keys - intersect, identical, trans.select { |k,v| k == v }.keys)
 end
