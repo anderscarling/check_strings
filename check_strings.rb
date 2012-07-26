@@ -1,6 +1,15 @@
 #! /usr/bin/env ruby
 ## vim: fileencoding=utf-8
 require 'pathname'
+require 'set'
+
+# THIS BE VERSION 1.0
+
+class Array
+  def dupes
+    each_with_object(Set.new) { |v,set| set << v if count(v) > 1 }
+  end
+end
 
 BASE_LANG_DIR = 'en.lproj'
 
@@ -55,13 +64,6 @@ def print_report(dir, missing_in_base, missing_in_trans, identical, key_eql_val,
   end
 
   print_big(' ', "")
-end
-
-require 'set'
-class Array
-  def dupes
-    each_with_object(Set.new) { |v,set| set << v if count(v) > 1 }
-  end
 end
 
 Pathname.glob("*.lproj") do |dir|
