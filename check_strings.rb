@@ -4,12 +4,19 @@ require 'pathname'
 
 BASE_LANG_DIR = 'en.lproj'
 
-def get_hash(dir)
+def get_tuple(dir)
   file = Pathname.new(dir).join(ARGV[0] || "Localizable.strings")
   data = File.open(file, 'rb:UTF-16LE:UTF-8') { |f| f.read }
-  data = data.lines.map { |line| line.match(/"(.+)"\s*=\s*"(.*)"/) }
-  data = data.compact.map { |m| [m[1], m[2]] }
-  Hash[data]
+  data = data.lines.map { |line| line.match(/^\s?"(.+)"\s*=\s*"(.*)".*$/) }
+  data.compact!
+
+  # Check for nastys
+  err_lines = data.reject { |match| match.to_s =~ /^".+"\s*=\s*".*";$/ }
+  if err_lines.size > 0
+    raise("Error reading #{dir}: Lines looks like data but does seem to contain errors:\n\n#{err_lines.join("\n")}")
+  end
+
+  data.map { |m| [m[1], m[2]] }
 end
 
 def print_big(sym,str)
@@ -20,15 +27,15 @@ def print_big(sym,str)
   puts sym*80
 end
 
-def print_report(dir, trans, base, identical, key_eql_val)
+def print_report(dir, missing_in_base, missing_in_trans, identical, key_eql_val, dupes, empty)
   print_big('#', "Checking %s" % dir)
 
-  base.each do |key|
-    puts "Missing in #{dir} compared to #{BASE_LANG_DIR}: #{key}%s"
+  missing_in_base.each do |key|
+    puts "Missing in #{BASE_LANG_DIR} compared to #{dir}: #{key}%s"
   end
 
-  trans.each do |key|
-    puts "Missing in #{BASE_LANG_DIR} compared to #{dir}: #{key}%s"
+  missing_in_trans.each do |key|
+    puts "Missing in #{dir} compared to #{BASE_LANG_DIR}: #{key}%s"
   end
 
   identical.each do |key|
@@ -39,16 +46,38 @@ def print_report(dir, trans, base, identical, key_eql_val)
     puts "String matches translation key in #{dir}: #{key}"
   end
 
+  dupes.each do |key|
+    puts "Multiple instances of translation key in #{dir}: #{key}"
+  end
+
+  empty.each do |key|
+    puts "Empty translation value in #{dir}: #{key}"
+  end
+
   print_big(' ', "")
 end
 
+require 'set'
+class Array
+  def dupes
+    each_with_object(Set.new) { |v,set| set << v if count(v) > 1 }
+  end
+end
+
 Pathname.glob("*.lproj") do |dir|
-  next if dir.to_s == BASE_LANG_DIR
+  trans       = get_tuple(dir)
+  trans_keys  = trans.map(&:first)
+  base        = get_tuple(BASE_LANG_DIR)
+  base_keys   = base.map(&:first)
+  intersect   = (trans_keys & base_keys)
 
-  trans     = get_hash(dir)
-  base      = get_hash(BASE_LANG_DIR)
-  intersect = (trans.keys & base.keys)
 
-  identical = intersect.map { |key| key if trans[key] == base[key] }.compact
-  print_report(dir, trans.keys - intersect, base.keys - intersect, identical, trans.select { |k,v| k == v }.keys)
+  missing_in_base  = trans_keys - intersect
+  missing_in_trans = base_keys  - intersect
+  identical        = dir.to_s == BASE_LANG_DIR ? [] : intersect.map { |key| key if trans.find { |k,v| k == key } == base.find { |k,v| k == key } }.compact
+  key_eql_val      = trans.select { |k,v| k == v }.map(&:first)
+  dupes            = trans_keys.dupes
+  empty            = trans.select { |k,v| v =~ /\A\s*\z/ }.map(&:first)
+
+  print_report(dir, missing_in_base, missing_in_trans, identical, key_eql_val, dupes, empty)
 end
