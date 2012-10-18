@@ -3,9 +3,15 @@
 require 'pathname'
 require 'set'
 
-# THIS BE VERSION 1.0
+# THIS BE VERSION 1.1
+# OKTHXBYE - Anders Carling <anders.carling@footballaddicts.com>
 
 class Array
+  def each_with_object(obj)
+    each { |item| yield item,obj }
+    return obj
+  end
+
   def dupes
     each_with_object(Set.new) { |v,set| set << v if count(v) > 1 }
   end
@@ -15,7 +21,11 @@ BASE_LANG_DIR = 'en.lproj'
 
 def get_tuple(dir)
   file = Pathname.new(dir).join(ARGV[0] || "Localizable.strings")
-  data = File.open(file, 'rb:UTF-16LE:UTF-8') { |f| f.read }
+  if RUBY_VERSION < '1.9.0'
+    data = `cat #{file} | iconv -f UTF-16LE -t UTF-8`
+  else
+    data = File.open(file, 'rb:UTF-16LE:UTF-8') { |f| f.read }
+  end
   data = data.lines.map { |line| line.match(/^\s?"(.+)"\s*=\s*"(.*)".*$/) }
   data.compact!
 
