@@ -6,6 +6,9 @@ Just drop into a map with =*.lproj= dirs and the script will compare
 =Localizable.strings= in all directories to the one in =en.lproj=.
 
 ## Implemented checks
-* Missing string compared to base language
-* Extra string compared to base language
-* String with identical name and value compated to base
+* Missing translation compared to base language (en)
+* Extra translation compared to base language (en)
+* Translation is the same compated with base language (en)
+* String matches translation key (en)
+* Multiple instances of translation key
+* Empty translation value
