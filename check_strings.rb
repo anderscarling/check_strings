@@ -3,7 +3,7 @@
 require 'pathname'
 require 'set'
 
-# THIS BE VERSION 1.1
+# THIS BE VERSION 1.2
 # OKTHXBYE - Anders Carling <anders.carling@footballaddicts.com>
 
 class Array
@@ -46,7 +46,7 @@ def print_big(sym,str)
   puts sym*80
 end
 
-def print_report(dir, missing_in_base, missing_in_trans, identical, key_eql_val, dupes, empty)
+def print_report(dir, missing_in_base, missing_in_trans, identical, percent_cnt_diff, newline_cnt_diff, key_eql_val, dupes, empty)
   print_big('#', "Checking %s" % dir)
 
   missing_in_base.each do |key|
@@ -59,6 +59,14 @@ def print_report(dir, missing_in_base, missing_in_trans, identical, key_eql_val,
 
   identical.each do |key|
     puts "Identical value in #{BASE_LANG_DIR} and #{dir}: #{key}"
+  end
+
+  percent_cnt_diff.each do |key|
+    puts "Diff in percent sign count in #{BASE_LANG_DIR} and #{dir}: #{key}"
+  end
+
+  newline_cnt_diff.each do |key|
+    puts "Diff in newline count in #{BASE_LANG_DIR} and #{dir}: #{key}"
   end
 
   key_eql_val.each do |key|
@@ -87,9 +95,11 @@ Pathname.glob("*.lproj") do |dir|
   missing_in_base  = trans_keys - intersect
   missing_in_trans = base_keys  - intersect
   identical        = dir.to_s == BASE_LANG_DIR ? [] : intersect.map { |key| key if trans.find { |k,v| k == key } == base.find { |k,v| k == key } }.compact
+  percent_cnt_diff = dir.to_s == BASE_LANG_DIR ? [] : intersect.map { |key| key if trans.find { |k,v| k == key }[1].split("%").size != base.find { |k,v| k == key }[1].split("%").size }.compact
+  newline_cnt_diff = dir.to_s == BASE_LANG_DIR ? [] : intersect.map { |key| key if trans.find { |k,v| k == key }[1].split('\n').size != base.find { |k,v| k == key }[1].split('\n').size }.compact
   key_eql_val      = trans.select { |k,v| k == v }.map(&:first)
   dupes            = trans_keys.dupes
   empty            = trans.select { |k,v| v =~ /\A\s*\z/ }.map(&:first)
 
-  print_report(dir, missing_in_base, missing_in_trans, identical, key_eql_val, dupes, empty)
+  print_report(dir, missing_in_base, missing_in_trans, identical, percent_cnt_diff, newline_cnt_diff, key_eql_val, dupes, empty)
 end
